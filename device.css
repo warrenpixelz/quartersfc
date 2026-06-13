@@ -1,0 +1,18 @@
+/* --- MOBILE RESPONSIVE VIEW --- */
+@media screen and (max-width: 600px) {
+    .container {
+        width: 90%; /* Gives a little breathing room on the sides */
+        margin: 20px auto;
+        padding: 20px;
+        box-shadow: none; /* Optional: flatter look for mobile */
+    }
+
+    h2 {
+        font-size: 1.5rem; /* Shrinks the title slightly so it doesn't wrap weirdly */
+    }
+
+    input, button {
+        font-size: 16px; /* Prevents iOS from zooming in automatically on inputs */
+        padding: 15px;  /* Makes buttons/inputs easier to tap with fingers */
+    }
+}
