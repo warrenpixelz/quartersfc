@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Quarters FC - Login</title>
+        <link rel="stylesheet" href="style.css">
+        
+        <!-- The Supabase Engine Library -->
+        <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    </head>
+    
+    <body>
+        <div class="container">
+            <h2>Quarters FC Login</h2>
+            <div id="loginForm">
+                <!-- Removed the password input entirely! -->
+                <input type="text" id="loginRegNo" placeholder="Enter Registration Number" required>
+                <button id="loginBtn">LOG IN</button>
+                <p style="margin-top:20px;">
+                    New player? <a href="reg.html">Register here</a>
+                </p>
+            </div>
+        </div>
+
+        <script>
+        const supabaseUrl = 'https://rtitjcfanlobkuqgvjqr.supabase.co';
+        const supabaseKey = 'sb_publishable_QJoS2B60UPAgXCNwJt5EzQ_I30e7b-n'; // <-- PASTE YOUR LONG ANON KEY HERE
+        
+        const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
+
+        document.getElementById("loginBtn").addEventListener("click", async () => {
+            const regNo = document.getElementById("loginRegNo").value.trim().toUpperCase();
+
+            if (!regNo) {
+                alert("Please enter your Registration Number.");
+                return;
+            }
+
+            // Look up the registration number directly in your 'players' table
+            const { data, error } = await supabaseClient
+                .from('players')
+                .select('*')
+                .eq('registrationNo', regNo)
+                .maybeSingle(); // Grabs the single matching player if they exist
+
+            if (error) {
+                alert("Error connecting to system: " + error.message);
+                return;
+            }
+
+            if (data) {
+                // MATCH FOUND! Save their registration number locally so the profile page can read it
+                localStorage.setItem("loggedInPlayerRegNo", regNo);
+                
+                // Send them straight to the dashboard
+                window.location.href = "profile.html";
+            } else {
+                // NO MATCH FOUND
+                alert("Registration Number not found! Please register first.");
+            }
+        });
+        </script>
+    </body>
+</html>

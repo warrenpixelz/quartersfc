@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Quarters FC - Profile</title>
+        <link rel="stylesheet" href="style.css">
+        
+        <!-- 1. Include the Supabase Engine Library -->
+        <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    </head>
+    <body>
+        <div class="container">
+            <h1>Profile</h1>
+            <div class="profile-card">
+                <p><span class="label">First Name</span> <span id="viewFirstName">Loading...</span></p>
+                <p><span class="label">Surname</span> <span id="viewSurname">Loading...</span></p>
+                <p><span class="label">Registration No</span> <span id="viewRegNo">Loading...</span></p>
+            </div>
+            <button class="logout-btn" onclick="logout()">Logout</button>
+        </div>
+
+        <script>
+        // 2. Initialize connection to your Supabase project
+        const supabaseUrl = 'https://rtitjcfanlobkuqgvjqr.supabase.co';
+        const supabaseKey = 'sb_publishable_QJoS2B60UPAgXCNwJt5EzQ_I30e7b-n'; // <-- PASTE YOUR LONG ANON KEY HERE
+        
+        const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
+
+        async function loadProfile() {
+            // 3. Check which player logged in from the login page
+            const savedRegNo = localStorage.getItem("loggedInPlayerRegNo");
+
+            // If no one is logged in, kick them back to the login page immediately
+            if (!savedRegNo) {
+                window.location.href = "login.html";
+                return;
+            }
+
+            // 4. Fetch that specific player's data row from the database
+            const { data, error } = await supabaseClient
+                .from('players')
+                .select('*')
+                .eq('registrationNo', savedRegNo)
+                .maybeSingle();
+
+            if (error) {
+                alert("Error loading profile: " + error.message);
+                return;
+            }
+
+            if (data) {
+                // 5. Replace "Loading..." with the real data from your table!
+                document.getElementById("viewFirstName").innerText = data.firstName;
+                document.getElementById("viewSurname").innerText = data.surname;
+                document.getElementById("viewRegNo").innerText = data.registrationNo;
+            } else {
+                alert("Player records not found.");
+                logout();
+            }
+        }
+
+        // 6. Define the logout action
+        function logout() {
+            // Clear the memory so nobody else can view this page without logging in
+            localStorage.removeItem("loggedInPlayerRegNo");
+            // Redirect back to login
+            window.location.href = "login.html";
+        }
+
+        // Run the function automatically when the page opens
+        loadProfile();
+        </script>
+    </body>
+</html>

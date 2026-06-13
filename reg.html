@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Quarters FC - Registration</title>
+        <link rel="stylesheet" href="style.css"> 
+        
+        <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+        <style>
+            /* --- CSS CUSTOM MODAL COMPONENTS --- */
+            /* Hidden by default, covers the entire screen */
+            .modal-overlay {
+                display: none; 
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0, 0, 0, 0.75); /* Dims the background */
+                backdrop-filter: blur(5px);      /* Blurs the page behind it */
+                justify-content: center;
+                align-items: center;
+                z-index: 9999;
+            }
+
+            /* The actual popup box */
+            .modal-box {
+                background: #1a1a1a;
+                border: 2px solid #4facfe; /* Matches your primary blue */
+                padding: 30px;
+                border-radius: 15px;
+                text-align: center;
+                max-width: 400px;
+                width: 85%;
+                box-shadow: 0 0 25px rgba(79, 172, 254, 0.3);
+                animation: popupAppear 0.3s ease-out;
+            }
+
+            .modal-icon {
+                font-size: 40px;
+                margin-bottom: 15px;
+            }
+
+            .modal-box h3 {
+                margin: 0 0 10px 0;
+                color: #ffffff;
+                font-size: 22px;
+                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                text-transform: uppercase;
+                letter-spacing: 1px;
+            }
+
+            .modal-box p {
+                color: #cccccc;
+                font-size: 15px;
+                margin-bottom: 25px;
+                line-height: 1.4;
+                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            }
+
+            /* Styled close button */
+            #modalCloseBtn {
+                background: linear-gradient(to right, #00f2fe 0%, #4facfe 100%);
+                color: white;
+                border: none;
+                padding: 12px 35px;
+                font-size: 14px;
+                font-weight: bold;
+                border-radius: 50px;
+                cursor: pointer;
+                text-transform: uppercase;
+                transition: 0.2s;
+                width: auto; /* Overrides broad layout width constraints */
+            }
+
+            #modalCloseBtn:hover {
+                background: #0081ff;
+                box-shadow: 0 0 15px rgba(79, 172, 254, 0.6);
+                transform: translateY(-1px);
+            }
+
+            /* Smooth zoom-in animation */
+            @keyframes popupAppear {
+                from { transform: scale(0.8); opacity: 0; }
+                to { transform: scale(1); opacity: 1; }
+            }
+        </style>
+    </head>
+    
+    <body>
+        <div class="container">
+            <h2>Quarters FC Registration</h2>
+            <form id="registrationForm">
+                <input type="text" id="firstName" placeholder="First Name" required>
+                <input type="text" id="surname" placeholder="Surname" required>
+                <input type="text" id="regNo" placeholder="Registration Number (e.g., Q2026002)" required>
+                <button type="submit" id="submitBtn">CREATE ACCOUNT</button>
+            </form>
+            <p style="margin-top:20px;">
+                Already have an account? <a href="login.html">Login here</a>
+            </p>
+        </div>
+
+        <div id="customAlert" class="modal-overlay">
+            <div class="modal-box">
+                <div class="modal-icon" id="modalIcon">⚠️</div>
+                <h3 id="modalTitle">Registration Error</h3>
+                <p id="modalMessage">This Registration Number is already taken!</p>
+                <button id="modalCloseBtn">OK</button>
+            </div>
+        </div>
+
+        <script>
+        // Initialize connection to your Supabase project
+        const supabaseUrl = 'https://rtitjcfanlobkuqgvjqr.supabase.co';
+        // Double-check this matches your complete, long Public Anon Key string!
+        const supabaseKey = 'sb_publishable_QJoS2B60UPAgXCNwJt5EzQ_I30e7b-n'; 
+        
+        const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
+
+        const form = document.getElementById('registrationForm');
+        const submitBtn = document.getElementById('submitBtn');
+
+        // Functions to drive our new custom modal UI engine
+        function showCustomModal(title, message, isSuccess = false) {
+            document.getElementById("modalTitle").innerText = title;
+            document.getElementById("modalMessage").innerText = message;
+            document.getElementById("modalIcon").innerText = isSuccess ? "✅" : "⚠️";
+            
+            // Adjust modal colors dynamically depending on error vs success status
+            const modalBox = document.querySelector(".modal-box");
+            modalBox.style.borderColor = isSuccess ? "#2ecc71" : "#4facfe";
+            
+            document.getElementById("customAlert").style.display = "flex";
+        }
+
+        // Event handler to close custom warning elements
+        document.getElementById("modalCloseBtn").addEventListener("click", () => {
+            document.getElementById("customAlert").style.display = "none";
+        });
+
+        form.addEventListener('submit', async function(event) {
+            event.preventDefault();
+            
+            // Change button state to give dynamic visual feedback
+            submitBtn.disabled = true;
+            submitBtn.innerText = "SAVING PLAYER...";
+
+            // 1. Grab values from inputs
+            const firstNameValue = document.getElementById('firstName').value.trim();
+            const surnameValue = document.getElementById('surname').value.trim();
+            const regNoValue = document.getElementById('regNo').value.trim().toUpperCase();
+
+            // Quick validation structural check
+            if (!firstNameValue || !surnameValue || !regNoValue) {
+                showCustomModal("Input Error", "Please fill out all form sections correctly.");
+                submitBtn.disabled = false;
+                submitBtn.innerText = "CREATE ACCOUNT";
+                return;
+            }
+
+            // 2. Save profile parameters straight to the database table
+            const { error: tableError } = await supabaseClient
+                .from('players')
+                .insert([
+                    {
+                        firstName: firstNameValue,
+                        surname: surnameValue,
+                        registrationNo: regNoValue
+                    }
+                ]);
+
+            if (tableError) {
+                // PostgREST code 23505 catches database unique constraint breaches
+                if (tableError.code === '23505') {
+                    showCustomModal("Duplicate Entry", `The Registration Number "${regNoValue}" is already listed in the club logs!`);
+                } else {
+                    showCustomModal("System Error", "Registration failed: " + tableError.message);
+                }
+                
+                // Reset button execution state
+                submitBtn.disabled = false;
+                submitBtn.innerText = "CREATE ACCOUNT";
+            } else {
+                // Display custom success modal, then route to login on confirmation
+                showCustomModal("Success!", `Welcome to Quarters FC, ${firstNameValue}! Your player record is active.`, true);
+                
+                // Overriding modal closure behavior on success to handle redirection smoothly
+                document.getElementById("modalCloseBtn").onclick = function() {
+                    window.location.href = "login.html";
+                };
+            }
+        });
+        </script>
+    </body>
+</html>
